@@ -86,4 +86,8 @@ class GwangjuBiennale {
   }
 }
 
-self.__bx_behaviors.load(GwangjuBiennale);
+if (self.__bx_behaviors) {
+  self.__bx_behaviors.load(GwangjuBiennale);
+} else {
+  self.addEventListener("load", () => self.__bx_behaviors && self.__bx_behaviors.load(GwangjuBiennale));
+}
