@@ -86,4 +86,4 @@ class GwangjuBiennale {
   }
 }
 
-GwangjuBiennale.load();
+self.__bx_behaviors.load(GwangjuBiennale);
