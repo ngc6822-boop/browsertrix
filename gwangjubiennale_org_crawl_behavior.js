@@ -1,8 +1,14 @@
-self.__bx_behaviors.add({
-  id: "gwangjubiennale",
-  isMatch() {
+export class GwangjuBiennale {
+  static id = "GwangjuBiennale";
+
+  static isMatch() {
     return location.hostname === "gwangjubiennale.org";
-  },
+  }
+
+  static init() {
+    return { state: {} };
+  }
+
   async *run(ctx) {
 
     // 1. 팝업 강제 닫기
@@ -52,7 +58,7 @@ self.__bx_behaviors.add({
       }
     });
 
-    // 7. dep2-list 강제 표시
+    // 7. dep2-list 강제 표시 (크롤러가 링크 인식)
     document.querySelectorAll('#gnb .dep2-list, #popup-menu .dep2-list').forEach(el => {
       el.style.display = 'block';
       el.style.visibility = 'visible';
@@ -76,6 +82,6 @@ self.__bx_behaviors.add({
       tab.click();
     });
 
-    yield ctx.Lib.sleep(1000);
+    yield ctx.Lib.getState(this, {});
   }
-});
+}
