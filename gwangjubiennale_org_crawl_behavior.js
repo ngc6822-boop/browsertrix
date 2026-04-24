@@ -85,3 +85,5 @@ class GwangjuBiennale {
     yield ctx.Lib.getState(this, {});
   }
 }
+
+GwangjuBiennale.load();
