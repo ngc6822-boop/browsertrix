@@ -86,8 +86,8 @@ class GwangjuBiennale {
   }
 }
 
-if (self.__bx_behaviors) {
+// checkScript(단독 실행) 단계에서는 __bx_behaviors가 없으므로 방어 처리
+// 실제 크롤 주입 시에는 __bx_behaviors.init() 이후 실행되므로 정상 동작
+if (typeof self.__bx_behaviors !== 'undefined') {
   self.__bx_behaviors.load(GwangjuBiennale);
-} else {
-  self.addEventListener("load", () => self.__bx_behaviors && self.__bx_behaviors.load(GwangjuBiennale));
 }
