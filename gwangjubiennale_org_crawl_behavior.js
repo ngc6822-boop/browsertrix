@@ -1,4 +1,4 @@
-export class GwangjuBiennale {
+class GwangjuBiennale {
   static id = "GwangjuBiennale";
 
   static isMatch() {
