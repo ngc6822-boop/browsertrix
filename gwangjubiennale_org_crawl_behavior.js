@@ -12,6 +12,16 @@ class GwangjuBiennale {
 
   async *run(ctx) {
 
+            // 0. pf_moveMenu onclick에서 URL 파싱 → addLink로 크롤 큐에 직접 추가
+            // (link extraction은 behavior 실행 전에 끝나므로 여기서 직접 큐 삽입 필요)
+            document.querySelectorAll('a[onclick*="pf_moveMenu"]').forEach(el => {
+                        const m = el.getAttribute('onclick').match(/pf_moveMenu\(['"]([^'"]+)['"]/);
+                        if (m && m[1]) ctx.Lib.addLink(location.origin + m[1]);
+            });
+            document.querySelectorAll('a[onclick*="pf_DetailMove"]').forEach(el => {
+                        const m = el.getAttribute('onclick').match(/pf_DetailMove\(['"]([^'"]+)['"]/);
+                        if (m && m[1]) ctx.Lib.addLink(location.origin + m[1]);
+            });
       // 1. 팝업 강제 닫기
       document.querySelectorAll('.popUpWrap_01').forEach(pop => {
               pop.style.display = 'none';
