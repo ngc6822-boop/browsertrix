@@ -122,7 +122,7 @@ class GwangjuBiennale {
     const noticeTabs = document.querySelectorAll('#main .main-brd-box .brd-tabs li');
     for (const tab of noticeTabs) {
       tab.click();
-      yield ctx.Lib.getState(this, { tab: tab.textContent.trim() });
+      yield { state: { tab: tab.textContent.trim() } };
     }
 
     // 서브페이지 공통 탭 (.com-tab-02)
@@ -164,7 +164,7 @@ class GwangjuBiennale {
     const questionLink = document.querySelector("a[onclick*='questionModal']");
     if (questionLink) {
       questionLink.click();
-      yield ctx.Lib.getState(this, { action: 'question-modal-open' });
+       yield { state: { action: 'question-modal-open' } };
       const modalClose = document.querySelector('.question-modal .btn-cls, .modal .btn-close, [class*="modal"] .btn-close');
       if (modalClose) modalClose.click();
     }
@@ -173,7 +173,7 @@ class GwangjuBiennale {
     const srchBtn = document.querySelector('#hd-bar .btn-open-glob-srch-box');
     if (srchBtn) {
       srchBtn.click();
-      yield ctx.Lib.getState(this, { action: 'search-open' });
+      yield { state: { action: 'search-open' } }
       const srchClose = document.querySelector('#global-srch .btn-cls, #global-srch .btn-close');
       if (srchClose) srchClose.click();
     }
@@ -182,13 +182,13 @@ class GwangjuBiennale {
     const popMenuBtn = document.querySelector('#hd-bar .btn-open-popup-menu');
     if (popMenuBtn) {
       popMenuBtn.click();
-      yield ctx.Lib.getState(this, { action: 'popup-menu-open' });
+      yield { state: { action: 'popup-menu-open' } };
       const popMenuClose = document.querySelector('#popup-menu .btn-cls');
       if (popMenuClose) popMenuClose.click();
     }
 
     // 최종 상태 yield
-    yield ctx.Lib.getState(this, {});
+    yield { state: {} };
   }
 }
 
