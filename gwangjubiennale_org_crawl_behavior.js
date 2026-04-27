@@ -8,7 +8,6 @@ class GwangjuBiennale {
 
   static init() {
     return { state: {} };
-    siteSpecific: {}  // ← 이거 추가
   }
 
   async *run(ctx) {
