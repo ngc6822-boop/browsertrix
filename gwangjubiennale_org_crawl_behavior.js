@@ -7,7 +7,10 @@ class GwangjuBiennale {
   }
 
   static init() {
-    return { state: {} };
+    return {
+      state: {},
+      siteSpecific: true  // __bx_behaviors에 siteSpecific 등록
+    };
   }
 
   async *run(ctx) {
