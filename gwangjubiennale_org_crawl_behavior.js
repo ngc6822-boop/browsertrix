@@ -12,7 +12,7 @@ class GwangjuBiennale {
 
   async *run(ctx) {
 
-            // 0. pf_moveMenu onclick에서 URL 파싱 → addLink로 크롤 큐에 직접 추가
+            // 0. pf_moveMenu onclick에서 URL 파싱 → addLink로 크롤 큐에 직접 추가h
             // (link extraction은 behavior 실행 전에 끝나므로 여기서 직접 큐 삽입 필요)
             document.querySelectorAll('a[onclick*="pf_moveMenu"]').forEach(el => {
                         const m = el.getAttribute('onclick').match(/pf_moveMenu\(['"]([^'"]+)['"]/);
@@ -136,10 +136,10 @@ class GwangjuBiennale {
                 yield { state: { tab: tab.textContent.trim() } };
         }
 
-      // 서브페이지 공통 탭 (.com-tab-02)
-      document.querySelectorAll('.com-tab-02 li a').forEach(a => {
-              try { a.click(); } catch(e) {}
-      });
+              // 서브페이지 공통 탭 (.com-tab-02) - click 대신 addLink로 큐 삽입 (페이지 이동 방지)
+document.querySelectorAll('.com-tab-02 li a').forEach(a => {
+            if (a.href && !a.href.startsWith('javascript')) ctx.Lib.addLink(a.href);
+});
 
       // 13. SC_QXCFB 실제 하위 URL + 영문 페이지 시드 앵커 삽입
       const seedUrls = [
