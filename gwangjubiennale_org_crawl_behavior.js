@@ -12,18 +12,14 @@ class GwangjuBiennale {
 
   async *run(ctx) {
 
-    // ─────────────────────────────────────────────
     // 1. 팝업 강제 닫기
-    // ─────────────────────────────────────────────
     document.querySelectorAll('.popUpWrap_01').forEach(pop => {
       pop.style.display = 'none';
     });
 
-    // ─────────────────────────────────────────────
     // 2. pf_moveMenu 함수 오버라이드
-    //    SC_QXCFB: POST AJAX → WARC 재연 시 실패하므로 직접 이동으로 우회
-    //    SC_HFAIU: window.open() → 앵커 삽입으로 크롤러가 수집하도록 변경
-    // ─────────────────────────────────────────────
+    //    SC_QXCFB: POST AJAX → 직접 이동으로 우회
+    //    SC_HFAIU: window.open() → 앵커 삽입으로 변경
     window.pf_moveMenu = function(URL, PAGEDIV) {
       if (PAGEDIV === 'SC_HFAIU') {
         const a = document.createElement('a');
@@ -37,10 +33,7 @@ class GwangjuBiennale {
       }
     };
 
-    // ─────────────────────────────────────────────
     // 3. GSAP ScrollTrigger 애니메이션 즉시 완료
-    //    (스크롤 없이도 모든 콘텐츠 표시)
-    // ─────────────────────────────────────────────
     if (window.gsap) {
       gsap.globalTimeline.progress(1);
       if (window.ScrollTrigger) {
@@ -54,20 +47,26 @@ class GwangjuBiennale {
       el.style.opacity = '1';
     });
 
-    // ─────────────────────────────────────────────
     // 4. Swiper 슬라이드 전체 visible 처리
-    // ─────────────────────────────────────────────
     document.querySelectorAll('.swiper-slide').forEach(slide => {
       slide.style.visibility = 'visible';
       slide.style.opacity = '1';
       slide.style.pointerEvents = 'auto';
     });
 
-    // ─────────────────────────────────────────────
-    // 5. GNB/SNB/팝업메뉴: onclick → href 변환
-    //    ※ dep1(GNB)은 onclick 없이 hover 전용이므로 제외
-    //    SC_HFAIU는 target="_blank" 설정
-    // ─────────────────────────────────────────────
+    // 5. 마퀴 애니메이션 정지 (콘텐츠 잘림 방지)
+    document.querySelectorAll('#main .marquee-center, .marquee-wrap').forEach(el => {
+      el.style.animationPlayState = 'paused';
+      el.style.transform = 'none';
+    });
+
+    // 6. 인스타그램 외부 임베드 제거 (크롤 속도 향상)
+    document.querySelectorAll('#main .instagram-box iframe, #main .instagram-box script').forEach(el => {
+      el.remove();
+    });
+
+    // 7. GNB/SNB/팝업메뉴: onclick → href 변환
+    //    ※ GNB dep1은 hover 전용이므로 제외
     document.querySelectorAll(
       '#gnb a.dep2, #popup-menu a.dep1, #popup-menu a.dep2, #snb a.dep-01, #snb a.dep-02'
     ).forEach(a => {
@@ -85,10 +84,7 @@ class GwangjuBiennale {
       }
     });
 
-    // ─────────────────────────────────────────────
-    // 6. dep2-list / dep-02-list 강제 표시
-    //    (hover 없이도 크롤러가 하위 링크 인식)
-    // ─────────────────────────────────────────────
+    // 8. dep2-list / dep-02-list 강제 표시
     document.querySelectorAll(
       '#gnb .dep2-list, #popup-menu .dep2-list, #snb .dep-02-list'
     ).forEach(el => {
@@ -98,10 +94,8 @@ class GwangjuBiennale {
       el.style.overflow = 'visible';
     });
 
-    // ─────────────────────────────────────────────
-    // 7. pf_DetailMove: onclick → href 변환
-    //    숫자형(12071)과 BN_KEYNO 형식(BN_0000012071) 모두 처리
-    // ─────────────────────────────────────────────
+    // 9. pf_DetailMove: onclick → href 변환
+    //    숫자형(12071) + BN_KEYNO 형식(BN_0000012071) 모두 처리
     document.querySelectorAll("a[onclick*='pf_DetailMove']").forEach(a => {
       const match = a.getAttribute('onclick').match(/pf_DetailMove\(['"]?([^'")\s]+)['"]?\)/);
       if (match) {
@@ -110,18 +104,22 @@ class GwangjuBiennale {
       }
     });
 
-    // ─────────────────────────────────────────────
-    // 8. pf_LinkPage: 페이지네이션 onclick 제거
-    //    href="?pageIndex=N" 이 이미 있으므로 onclick만 제거하면 GET 동작
-    // ─────────────────────────────────────────────
+    // 10. pf_LinkPage: 페이지네이션 onclick 제거 → GET 방식 동작
     document.querySelectorAll(".com-brd-pagination a[href*='pageIndex']").forEach(a => {
       a.removeAttribute('onclick');
     });
 
-    // ─────────────────────────────────────────────
-    // 9. 공지사항 탭 전환 (AJAX 없음, show/hide 방식)
-    //    각 탭 클릭 후 yield → 크롤러가 숨겨진 목록 링크 수집
-    // ─────────────────────────────────────────────
+    // 11. 모바일 서브메뉴 select의 option URL → 앵커 변환
+    document.querySelectorAll('#sp-mobile-menu-box option[value]').forEach(opt => {
+      if (opt.value && opt.value !== '#') {
+        const a = document.createElement('a');
+        a.href = opt.value;
+        a.style.display = 'none';
+        document.body.appendChild(a);
+      }
+    });
+
+    // 12. 공지사항 탭 전환 (탭별 yield로 숨겨진 목록 수집)
     const noticeTabs = document.querySelectorAll('#main .main-brd-box .brd-tabs li');
     for (const tab of noticeTabs) {
       tab.click();
@@ -131,23 +129,16 @@ class GwangjuBiennale {
     // 서브페이지 공통 탭 (.com-tab-02)
     document.querySelectorAll('.com-tab-02 li a').forEach(a => a.click());
 
-    // ─────────────────────────────────────────────
-    // 10. SC_QXCFB 실제 하위 URL 시드 앵커 삽입
-    //     AJAX 없이 크롤러가 실제 페이지로 직접 진입하도록
-    // ─────────────────────────────────────────────
+    // 13. SC_QXCFB 실제 하위 URL + 영문 페이지 시드 앵커 삽입
     const seedUrls = [
-      // 전시 - 2025 광주디자인비엔날레 하위 페이지 (SC_QXCFB 실제 도달 URL)
       '/gb/exhibition/biennale/mainexhibition.do',
       '/gb/exhibition/biennale/visitorinfo.do',
       '/gb/exhibition/biennale/programs.do',
-      // 전시 - 지난전시
       '/gb/exhibition/past/15.do',
-      // 재단소개 탭 (서버사이드 탭 파라미터)
       '/gb/foundation/organization.do?tab=1',
       '/gb/foundation/organization.do?tab=2',
       '/gb/foundation/organization.do?tab=3',
       '/gb/foundation/organization.do?tab=4',
-      // 영문 메인
       '/en/index.do?sellan=en',
     ];
 
@@ -159,11 +150,27 @@ class GwangjuBiennale {
       a.href = url;
       seedContainer.appendChild(a);
     });
+
+    // 지난전시 SNB에서 실제 회차 URL 동적 추출
+    document.querySelectorAll('#snb a.dep-02[href*="/gb/exhibition/past/"]').forEach(a => {
+      const anchor = document.createElement('a');
+      anchor.href = a.href;
+      anchor.style.display = 'none';
+      seedContainer.appendChild(anchor);
+    });
+
     document.body.appendChild(seedContainer);
 
-    // ─────────────────────────────────────────────
-    // 11. 통합검색 오픈 캡처
-    // ─────────────────────────────────────────────
+    // 14. 문의하기 모달 오픈 캡처
+    const questionLink = document.querySelector("a[onclick*='questionModal']");
+    if (questionLink) {
+      questionLink.click();
+      yield ctx.Lib.getState(this, { action: 'question-modal-open' });
+      const modalClose = document.querySelector('.question-modal .btn-cls, .modal .btn-close, [class*="modal"] .btn-close');
+      if (modalClose) modalClose.click();
+    }
+
+    // 15. 통합검색 오픈 캡처
     const srchBtn = document.querySelector('#hd-bar .btn-open-glob-srch-box');
     if (srchBtn) {
       srchBtn.click();
@@ -172,9 +179,7 @@ class GwangjuBiennale {
       if (srchClose) srchClose.click();
     }
 
-    // ─────────────────────────────────────────────
-    // 12. 전체보기 메뉴(#popup-menu) 오픈 캡처
-    // ─────────────────────────────────────────────
+    // 16. 전체보기 메뉴(#popup-menu) 오픈 캡처
     const popMenuBtn = document.querySelector('#hd-bar .btn-open-popup-menu');
     if (popMenuBtn) {
       popMenuBtn.click();
@@ -183,9 +188,7 @@ class GwangjuBiennale {
       if (popMenuClose) popMenuClose.click();
     }
 
-    // ─────────────────────────────────────────────
     // 최종 상태 yield
-    // ─────────────────────────────────────────────
     yield ctx.Lib.getState(this, {});
   }
 }
