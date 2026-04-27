@@ -28,9 +28,8 @@ class GwangjuBiennale {
         a.rel = 'noopener';
         a.style.display = 'none';
         document.body.appendChild(a);
-      } else {
-        location.href = URL;
       }
+      // 그 외: 아무것도 안 함 (페이지 이탈 방지)
     };
 
     // 3. GSAP ScrollTrigger 애니메이션 즉시 완료
