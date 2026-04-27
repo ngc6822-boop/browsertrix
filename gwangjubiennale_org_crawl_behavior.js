@@ -200,7 +200,3 @@ class GwangjuBiennale {
       yield { state: {} };
   }
 }
-
-if (typeof self.__bx_behaviors !== 'undefined') {
-    self.__bx_behaviors.load(GwangjuBiennale);
-}
