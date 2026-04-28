@@ -18,10 +18,24 @@ class GwangjuBiennale {
                         const m = el.getAttribute('onclick').match(/pf_moveMenu\(['"]([^'"]+)['"]/);
                         if (m && m[1]) ctx.Lib.addLink(location.origin + m[1]);
             });
-            document.querySelectorAll('a[onclick*="pf_DetailMove"]').forEach(el => {
-                        const m = el.getAttribute('onclick').match(/pf_DetailMove\(['"]([^'"]+)['"]/);
-                        if (m && m[1]) ctx.Lib.addLink(location.origin + m[1]);
-            });
+        // pf_DetailMove: POST 방식 게시물 → fetch로 직접 수집 (WACZ에 POST 응답 캡처됨)
+              const csrfToken = (document.querySelector('meta[name="_csrf"]') || {}).content
+                || (document.querySelector('input[name="_csrf"]') || {}).value || '';
+              const detailEls = Array.from(document.querySelectorAll('a[onclick*="pf_DetailMove"]'));
+              for (const el of detailEls) {
+                            const m = el.getAttribute('onclick').match(/pf_DetailMove\(['"]?([^'")\s]+)['"]?\)/);
+                            if (m && m[1]) {
+                                            const url = location.origin + '/gb/Board/' + m[1] + '/detailView.do';
+                                            try {
+                                                              await fetch(url, {
+                                                                                  method: 'POST',
+                                                                                  headers: {'Content-Type': 'application/x-www-form-urlencoded'},
+                                                                                  body: '_csrf=' + encodeURIComponent(csrfToken),
+                                                                                  credentials: 'same-origin',
+                                                              });
+                                            } catch(e) {}
+                            }
+              }
       // 1. 팝업 강제 닫기
       document.querySelectorAll('.popUpWrap_01').forEach(pop => {
               pop.style.display = 'none';
