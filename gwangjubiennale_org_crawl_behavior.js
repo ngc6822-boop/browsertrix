@@ -12,56 +12,51 @@ class GwangjuBiennale {
 
   async *run(ctx) {
 
-            // 0. pf_moveMenu onclick에서 URL 파싱 → addLink로 크롤 큐에 직접 추가h
-            // (link extraction은 behavior 실행 전에 끝나므로 여기서 직접 큐 삽입 필요)
-            document.querySelectorAll('a[onclick*="pf_moveMenu"]').forEach(el => {
-                        const m = el.getAttribute('onclick').match(/pf_moveMenu\(['"]([^'"]+)['"]/);
-                        if (m && m[1]) ctx.Lib.addLink(location.origin + m[1]);
-            });
-        // pf_DetailMove: POST 방식 게시물 → fetch로 직접 수집 (WACZ에 POST 응답 캡처됨)
-              const csrfToken = (document.querySelector('meta[name="_csrf"]') || {}).content
-                || (document.querySelector('input[name="_csrf"]') || {}).value || '';
-              const detailEls = Array.from(document.querySelectorAll('a[onclick*="pf_DetailMove"]'));
-              for (const el of detailEls) {
-                            const m = el.getAttribute('onclick').match(/pf_DetailMove\(['"]?([^'")\s]+)['"]?\)/);
-                            if (m && m[1]) {
-                                            const url = location.origin + '/gb/Board/' + m[1] + '/detailView.do';
-                                            try {
-                                                              await fetch(url, {
-                                                                                  method: 'POST',
-                                                                                  headers: {'Content-Type': 'application/x-www-form-urlencoded'},
-                                                                                  body: '_csrf=' + encodeURIComponent(csrfToken),
-                                                                                  credentials: 'same-origin',
-                                                              });
-                                            } catch(e) {}
-                            }
-              }
+      // 0. pf_moveMenu onclick에서 URL 파싱 → addLink로 크롤 큐에 직접 추가
+      // (link extraction은 behavior 실행 전에 끝나므로 여기서 직접 큐 삽입 필요)
+      document.querySelectorAll('a[onclick*="pf_moveMenu"]').forEach(el => {
+              const m = el.getAttribute('onclick').match(/pf_moveMenu\(['"](([^'"]+))['"]/);
+              if (m && m[1]) ctx.Lib.addLink(location.origin + m[1]);
+      });
+
+      // pf_DetailMove: addLink로 크롤 큐에 직접 추가 (크롤러가 실제 페이지 방문하도록)
+      // BN_KEYNO(BN_0000012071) 및 숫자(12071) 형식 모두 처리
+      const detailEls = document.querySelectorAll("a[onclick*='pf_DetailMove']");
+        for (const el of detailEls) {
+                const onclick = el.getAttribute('onclick') || '';
+                const m = onclick.match(/pf_DetailMove\(['"]{0,1}([^'")\s]+)['"]{0,1}\)/);
+                if (m && m[1]) {
+                          // BN_0000012071 → 12071, 또는 숫자 그대로
+                  const keyno = m[1].startsWith('BN_') ? String(parseInt(m[1].replace('BN_', ''), 10)) : m[1];
+                          const url = location.origin + '/gb/Board/' + keyno + '/detailView.do';
+                          ctx.Lib.addLink(url);
+                          // href도 변환 (selectLinks 대응)
+                  el.href = url;
+                          el.removeAttribute('onclick');
+                }
+        }
+
       // 1. 팝업 강제 닫기
       document.querySelectorAll('.popUpWrap_01').forEach(pop => {
               pop.style.display = 'none';
       });
 
-      // 2. pf_moveMenu 함수 오버라이드
-      //    SC_QXCFB: AJAX 우회, SC_HFAIU: window.open 우회
-      //    location.href 호출 완전 차단 → behavior 중 페이지 이탈 방지
+      // 2. pf_moveMenu 함수 오버라이드 (페이지 이탈 방지)
       window.pf_moveMenu = function(URL, PAGEDIV) {
               if (PAGEDIV === 'SC_HFAIU') {
                         const a = document.createElement('a');
                         a.href = URL;
                         a.target = '_blank';
-                        a.rel = 'noopener';
-                        a.style.display = 'none';
                         document.body.appendChild(a);
               }
               // SC_QXCFB, SC_TFOVO 등: 아무것도 안 함 (페이지 이탈 방지)
-              // href 변환은 아래 Step 7에서 처리
       };
 
       // 3. GSAP ScrollTrigger 애니메이션 즉시 완료
       if (window.gsap) {
               gsap.globalTimeline.progress(1);
               if (window.ScrollTrigger) {
-                        ScrollTrigger.getAll().forEach(st => st.kill());
+                        ScrollTrigger.getAll().forEach(t => t.progress(1));
               }
       }
         document.querySelectorAll(
@@ -75,12 +70,12 @@ class GwangjuBiennale {
       document.querySelectorAll('.swiper-slide').forEach(slide => {
               slide.style.visibility = 'visible';
               slide.style.opacity = '1';
-              slide.style.pointerEvents = 'auto';
+              slide.style.display = '';
       });
 
       // 5. 마퀴 애니메이션 정지 (콘텐츠 잘림 방지)
       document.querySelectorAll('#main .marquee-center, .marquee-wrap').forEach(el => {
-              el.style.animationPlayState = 'paused';
+              el.style.animation = 'none';
               el.style.transform = 'none';
       });
 
@@ -90,19 +85,18 @@ class GwangjuBiennale {
       });
 
       // 7. GNB/SNB/팝업메뉴: onclick → href 변환
-      //    ※ GNB dep1은 hover 전용이므로 제외
       document.querySelectorAll(
               '#gnb a.dep2, #popup-menu a.dep1, #popup-menu a.dep2, #snb a.dep-01, #snb a.dep-02'
             ).forEach(a => {
               const onclick = a.getAttribute('onclick') || '';
               const match = onclick.match(/pf_moveMenu\(['"](.+?)['"],\s*['"](.+?)['"]\)/);
               if (match) {
-                        const url = match[1];
-                        const code = match[2];
-                        a.href = url;
+                        const [, URL, code] = match;
                         if (code === 'SC_HFAIU') {
+                                    a.href = URL;
                                     a.target = '_blank';
-                                    a.rel = 'noopener';
+                        } else {
+                                    a.href = location.origin + URL;
                         }
                         a.removeAttribute('onclick');
               }
@@ -114,48 +108,62 @@ class GwangjuBiennale {
             ).forEach(el => {
               el.style.display = 'block';
               el.style.visibility = 'visible';
+              el.style.opacity = '1';
               el.style.height = 'auto';
-              el.style.overflow = 'visible';
       });
 
-      // 9. pf_DetailMove: onclick → href 변환
-      //    숫자형(12071) + BN_KEYNO 형식(BN_0000012071) 모두 처리
-      document.querySelectorAll("a[onclick*='pf_DetailMove']").forEach(a => {
-              const match = a.getAttribute('onclick').match(/pf_DetailMove\(['"]?([^'")\s]+)['"]?\)/);
-              if (match) {
-                        a.href = '/gb/Board/' + match[1] + '/detailView.do';
-                        a.removeAttribute('onclick');
+      // 9. 이전글/다음글(.article-list a): addLink 추가 + 절대URL 그대로 유지
+      //    (selectLinks에서 이미 href로 수집되므로 addLink로 크롤 큐에도 추가)
+      document.querySelectorAll('.article-list a[href]').forEach(a => {
+              if (a.href && !a.href.startsWith('javascript')) {
+                        ctx.Lib.addLink(a.href);
               }
       });
 
-      // 10. pf_LinkPage: 페이지네이션 onclick 제거 → GET 방식 동작
+      // 10. 첨부파일 링크 addLink 추가
+      document.querySelectorAll(
+              'a[href*="/fileDownload"], a[href*="/download"], a[onclick*="download"], .attach-list a, .file-list a'
+            ).forEach(a => {
+              if (a.href && !a.href.startsWith('javascript')) {
+                        ctx.Lib.addLink(a.href);
+              }
+      });
+
+      // 11. 게시물 본문 내 이미지: src가 upload 경로인 경우 addLink
+      document.querySelectorAll(
+              '.brd-view-cont img[src*="upload"], .view-cont img[src*="upload"], .cont-area img[src*="upload"]'
+            ).forEach(img => {
+              if (img.src) ctx.Lib.addLink(img.src);
+      });
+
+      // 12. pf_LinkPage: 페이지네이션 onclick 제거 → GET 방식 동작
       document.querySelectorAll(".com-brd-pagination a[href*='pageIndex']").forEach(a => {
               a.removeAttribute('onclick');
       });
 
-      // 11. 모바일 서브메뉴 select의 option URL → 앵커 변환
+      // 13. 모바일 서브메뉴 select의 option URL → 앵커 변환
       document.querySelectorAll('#sp-mobile-menu-box option[value]').forEach(opt => {
-              if (opt.value && opt.value !== '#') {
+              const val = opt.getAttribute('value');
+              if (val && val.startsWith('/')) {
                         const a = document.createElement('a');
-                        a.href = opt.value;
-                        a.style.display = 'none';
+                        a.href = location.origin + val;
                         document.body.appendChild(a);
               }
       });
 
-      // 12. 공지사항 탭 전환 (탭별 yield로 숨겨진 목록 수집)
-      const noticeTabs = document.querySelectorAll('#main .main-brd-box .brd-tabs li');
+      // 14. 공지사항 탭 전환 (탭별 yield로 숨겨진 목록 수집)
+      const noticeTabs = document.querySelectorAll('.brd-tabs li a[onclick*="setRelatedBoardPath"]');
         for (const tab of noticeTabs) {
                 try { tab.click(); } catch(e) {}
                 yield { state: { tab: tab.textContent.trim() } };
         }
 
-              // 서브페이지 공통 탭 (.com-tab-02) - click 대신 addLink로 큐 삽입 (페이지 이동 방지)
-document.querySelectorAll('.com-tab-02 li a').forEach(a => {
-            if (a.href && !a.href.startsWith('javascript')) ctx.Lib.addLink(a.href);
-});
+      // 서브페이지 공통 탭 (.com-tab-02) - addLink로 큐 삽입
+      document.querySelectorAll('.com-tab-02 li a').forEach(a => {
+              if (a.href && !a.href.startsWith('javascript')) ctx.Lib.addLink(a.href);
+      });
 
-      // 13. SC_QXCFB 실제 하위 URL + 영문 페이지 시드 앵커 삽입
+      // 15. SC_QXCFB 실제 하위 URL + 영문 페이지 시드 앵커 삽입
       const seedUrls = [
               '/gb/exhibition/biennale/mainexhibition.do',
               '/gb/exhibition/biennale/visitorinfo.do',
@@ -169,11 +177,10 @@ document.querySelectorAll('.com-tab-02 li a').forEach(a => {
             ];
 
       const seedContainer = document.createElement('div');
-        seedContainer.id = '__bx_seed_urls';
         seedContainer.style.display = 'none';
         seedUrls.forEach(url => {
                 const a = document.createElement('a');
-                a.href = url;
+                a.href = location.origin + url;
                 seedContainer.appendChild(a);
         });
 
@@ -181,41 +188,40 @@ document.querySelectorAll('.com-tab-02 li a').forEach(a => {
       document.querySelectorAll('#snb a.dep-02[href*="/gb/exhibition/past/"]').forEach(a => {
               const anchor = document.createElement('a');
               anchor.href = a.href;
-              anchor.style.display = 'none';
               seedContainer.appendChild(anchor);
       });
 
       document.body.appendChild(seedContainer);
 
-      // 14. 문의하기 모달 오픈 캡처 (페이지 이동 없음 확인 후 클릭)
+      // 16. 문의하기 모달 오픈 캡처
       try {
-              const questionLink = document.querySelector("a[onclick*='questionModal']");
+              const questionLink = document.querySelector('a[onclick*="openQuestion"], a[href*="question"]');
               if (questionLink) {
                         questionLink.click();
                         yield { state: { action: 'question-modal-open' } };
-                        const modalClose = document.querySelector('.question-modal .btn-cls, .modal .btn-close, [class*="modal"] .btn-close');
+                        const modalClose = document.querySelector('.modal .close, .layer-popup .btn-close');
                         if (modalClose) modalClose.click();
               }
       } catch(e) {}
 
-      // 15. 통합검색 오픈 캡처
+      // 17. 통합검색 오픈 캡처
       try {
-              const srchBtn = document.querySelector('#hd-bar .btn-open-glob-srch-box');
+              const srchBtn = document.querySelector('#hd .btn-search, .btn-srch');
               if (srchBtn) {
                         srchBtn.click();
                         yield { state: { action: 'search-open' } };
-                        const srchClose = document.querySelector('#global-srch .btn-cls, #global-srch .btn-close');
+                        const srchClose = document.querySelector('#hd .search-close, .srch-close');
                         if (srchClose) srchClose.click();
               }
       } catch(e) {}
 
-      // 16. 전체보기 메뉴(#popup-menu) 오픈 캡처
+      // 18. 전체보기 메뉴(#popup-menu) 오픈 캡처
       try {
-              const popMenuBtn = document.querySelector('#hd-bar .btn-open-popup-menu');
+              const popMenuBtn = document.querySelector('#hd .btn-allmenu, .btn-all-menu');
               if (popMenuBtn) {
                         popMenuBtn.click();
                         yield { state: { action: 'popup-menu-open' } };
-                        const popMenuClose = document.querySelector('#popup-menu .btn-cls');
+                        const popMenuClose = document.querySelector('#popup-menu .btn-close');
                         if (popMenuClose) popMenuClose.click();
               }
       } catch(e) {}
